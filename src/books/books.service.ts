@@ -1,46 +1,47 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { Repository, DataSource } from 'typeorm';
+
+import { Book } from './entities/book.entity';
+import { CreateBookDto } from './dto/book.dto';
+import { UpdateBookDto } from './dto/update-book.dto';
+
 
 @Injectable()
 export class BooksService {
-  private books = [
-    {
-      id: 1,
-      title: 'Atomic Habits',
-      author: 'James Clear',
-      price: 500,
-    },
-    {
-      id: 2,
-      title: 'Rich Dad Poor Dad',
-      author: 'Robert Kiyosaki',
-      price: 650,
-    },
-    {
-      id: 3,
-      title: 'Deep Work',
-      author: 'Cal Newport',
-      price: 700,
-    },
-  ];
+  private readonly bookRepository: Repository<Book>;
+
+  constructor(private readonly dataSource: DataSource) {
+    this.bookRepository = this.dataSource.getRepository(Book);
+    console.log('BookRepository created successfully');
+  }
 
   // GET ALL BOOKS
-  findAll() {
-    return this.books;
+  async findAll() {
+    return await this.bookRepository.find();
   }
 
   // GET ONE BOOK
-  findOne(id: number) {
-    return this.books.find((book) => book.id === id);
+  async findOne(id: number) {
+    const book = await this.bookRepository.findOne({
+      where: { id },
+    });
+
+    if (!book) {
+      throw new NotFoundException(`Book with ID ${id} not found`);
+    }
+
+    return book;
   }
 
   // CREATE BOOK
-  create(book: any) {
-    // Check for duplicate title
-    const existingBook = this.books.find(
-      (b) =>
-        b.title.toLowerCase() ===
-        (typeof book?.title === 'string' ? book.title : '').toLowerCase(),
-    );
+  async create(createBookDto: CreateBookDto) {
+    // Check for duplicate title in database
+    const existingBook = await this.bookRepository
+      .createQueryBuilder('book')
+      .where('LOWER(book.title) = LOWER(:title)', {
+        title: createBookDto.title,
+      })
+      .getOne();
 
     if (existingBook) {
       return {
@@ -48,75 +49,72 @@ export class BooksService {
       };
     }
 
-    const newBook = {
-      id: this.books.length + 1,
-      title: book.title,
-      author: book.author,
-      price: book.price,
-    };
+    const newBook = this.bookRepository.create(createBookDto);
 
-    this.books.push(newBook);
+    const savedBook = await this.bookRepository.save(newBook);
 
     return {
       message: 'Book added successfully!',
-      book: newBook,
+      book: savedBook,
     };
   }
 
   // UPDATE BOOK
-  update(id: number, updatedBook: any) {
-    // Find the book
-    const book = this.books.find((b) => b.id === id);
+  async update(id: number, updateBookDto: UpdateBookDto) {
+    // Find book in database
+    const book = await this.bookRepository.findOne({
+      where: { id },
+    });
 
     if (!book) {
-      return {
-        message: 'Book not found!',
-      };
+      throw new NotFoundException(`Book with ID ${id} not found`);
     }
 
-    // Check if another book already has the same title
-    const duplicateBook = this.books.find(
-      (b) =>
-        b.id !== id &&
-        b.title.toLowerCase() ===
-        (typeof updatedBook?.title === 'string' ? updatedBook.title : '').toLowerCase(),
-    );
+    // Check duplicate title only if title is being updated
+    if (updateBookDto.title !== undefined) {
+      const duplicateBook = await this.bookRepository
+        .createQueryBuilder('book')
+        .where('LOWER(book.title) = LOWER(:title)', {
+          title: updateBookDto.title,
+        })
+        .andWhere('book.id != :id', { id })
+        .getOne();
 
-    if (duplicateBook) {
-      return {
-        message: 'Another book with this title already exists!',
-      };
+      if (duplicateBook) {
+        return {
+          message: 'Another book with this title already exists!',
+        };
+      }
     }
 
-    // Update book
-    book.title = updatedBook.title;
-    book.author = updatedBook.author;
-    book.price = updatedBook.price;
+    // Update the book
+    Object.assign(book, updateBookDto);
+
+    const updatedBook = await this.bookRepository.save(book);
 
     return {
       message: 'Book updated successfully!',
-      book: book,
+      book: updatedBook,
     };
   }
 
   // DELETE BOOK
-  remove(id: number) {
-    // Find the position of the book
-    const index = this.books.findIndex((book) => book.id === id);
+  async remove(id: number) {
+    // Find book in database
+    const book = await this.bookRepository.findOne({
+      where: { id },
+    });
 
-    // Check if book exists
-    if (index === -1) {
-      return {
-        message: 'Book not found!',
-      };
+    if (!book) {
+      throw new NotFoundException(`Book with ID ${id} not found`);
     }
 
-    // Delete the book
-    const deletedBook = this.books.splice(index, 1);
+    // Delete from database
+    await this.bookRepository.remove(book);
 
     return {
       message: 'Book deleted successfully!',
-      book: deletedBook[0],
+      book,
     };
   }
 }

@@ -6,24 +6,23 @@ import {
   Param,
   Post,
   Put,
-  UsePipes,
-  ValidationPipe,
 } from '@nestjs/common';
 
 import { BooksService } from './books.service';
 import { CreateBookDto } from './dto/book.dto';
+import { UpdateBookDto } from './dto/update-book.dto';
 
 @Controller('books')
 export class BooksController {
   constructor(private readonly booksService: BooksService) {}
 
-  
+  // GET ALL BOOKS
   @Get()
   findAll() {
     return this.booksService.findAll();
   }
 
-  
+  // GET ONE BOOK
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.booksService.findOne(Number(id));
@@ -31,30 +30,18 @@ export class BooksController {
 
   // CREATE BOOK
   @Post()
-  @UsePipes(
-    new ValidationPipe({
-      transform: true,
-      whitelist: true,
-      forbidNonWhitelisted: true,
-    }),
-  )
   create(@Body() book: CreateBookDto) {
     return this.booksService.create(book);
   }
 
   // UPDATE BOOK
   @Put(':id')
-  @UsePipes(
-    new ValidationPipe({
-      transform: true,
-      whitelist: true,
-      forbidNonWhitelisted: true,
-    }),
-  )
   update(
     @Param('id') id: string,
-    @Body() updatedBook: any,
+    @Body() updatedBook: UpdateBookDto,
   ) {
+    console.log('CONTROLLER BODY:', updatedBook);
+
     return this.booksService.update(Number(id), updatedBook);
   }
 
