@@ -9,11 +9,11 @@ import { Book } from './books/entities/book.entity';
 @Module({
   imports: [
     TypeOrmModule.forRoot({
-      type: 'mysql',
+      type: 'postgres',
       host: 'localhost',
-      port: 3306,
-      username: 'root',
-      password: '',
+      port: 5432,
+      username: 'postgres',
+      password: 'admin123',
       database: 'book-management-api',
       entities: [Book],
       synchronize: false,
