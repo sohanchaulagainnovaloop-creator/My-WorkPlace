@@ -6,17 +6,22 @@ import {
   Param,
   Post,
   Put,
+  UseGuards,
 } from '@nestjs/common';
+
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 import { BooksService } from './books.service';
 import { CreateBookDto } from './dto/book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 
 @Controller('books')
+@UseGuards(JwtAuthGuard)
 export class BooksController {
   constructor(private readonly booksService: BooksService) {}
 
   // GET ALL BOOKS
+  @UseGuards(JwtAuthGuard)
   @Get()
   findAll() {
     return this.booksService.findAll();
@@ -36,10 +41,7 @@ export class BooksController {
 
   // UPDATE BOOK
   @Put(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updatedBook: UpdateBookDto,
-  ) {
+  update(@Param('id') id: string, @Body() updatedBook: UpdateBookDto) {
     console.log('CONTROLLER BODY:', updatedBook);
 
     return this.booksService.update(Number(id), updatedBook);
