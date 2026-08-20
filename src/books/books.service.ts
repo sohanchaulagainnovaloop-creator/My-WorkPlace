@@ -5,7 +5,6 @@ import { Book } from './entities/book.entity';
 import { CreateBookDto } from './dto/book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 
-
 @Injectable()
 export class BooksService {
   private readonly bookRepository: Repository<Book>;
@@ -17,13 +16,20 @@ export class BooksService {
 
   // GET ALL BOOKS
   async findAll() {
-    return await this.bookRepository.find();
+    return await this.bookRepository.find({
+      relations: {
+  author: true,
+},
+    });
   }
 
   // GET ONE BOOK
   async findOne(id: number) {
     const book = await this.bookRepository.findOne({
       where: { id },
+      relations: {
+  author: true,
+},
     });
 
     if (!book) {
@@ -34,7 +40,10 @@ export class BooksService {
   }
 
   // CREATE BOOK
-  async create(createBookDto: CreateBookDto) {
+  async create(
+  createBookDto: CreateBookDto,
+  user: { id: number; email: string; role: string },
+) {
     // Check for duplicate title in database
     const existingBook = await this.bookRepository
       .createQueryBuilder('book')
@@ -49,7 +58,12 @@ export class BooksService {
       };
     }
 
-    const newBook = this.bookRepository.create(createBookDto);
+    // Create book and automatically assign
+    // the logged-in user as the author
+    const newBook = this.bookRepository.create({
+      ...createBookDto,
+      authorId: user.id,
+    });
 
     const savedBook = await this.bookRepository.save(newBook);
 
@@ -64,6 +78,9 @@ export class BooksService {
     // Find book in database
     const book = await this.bookRepository.findOne({
       where: { id },
+      relations: {
+  author: true,
+},
     });
 
     if (!book) {
@@ -103,6 +120,9 @@ export class BooksService {
     // Find book in database
     const book = await this.bookRepository.findOne({
       where: { id },
+      relations: {
+  author: true,
+},
     });
 
     if (!book) {

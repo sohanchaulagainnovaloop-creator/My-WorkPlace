@@ -6,6 +6,7 @@ import {
   Param,
   Post,
   Put,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 
@@ -21,7 +22,6 @@ export class BooksController {
   constructor(private readonly booksService: BooksService) {}
 
   // GET ALL BOOKS
-  @UseGuards(JwtAuthGuard)
   @Get()
   findAll() {
     return this.booksService.findAll();
@@ -35,8 +35,8 @@ export class BooksController {
 
   // CREATE BOOK
   @Post()
-  create(@Body() book: CreateBookDto) {
-    return this.booksService.create(book);
+  create(@Body() book: CreateBookDto, @Req() req: any) {
+    return this.booksService.create(book, req.user);
   }
 
   // UPDATE BOOK

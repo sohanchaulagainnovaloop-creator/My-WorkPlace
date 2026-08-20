@@ -14,18 +14,24 @@ async function seed() {
     const books = [
       {
         title: 'Atomic Habits',
-        author: 'James Clear',
+        isbn: 'ISBN-BOOK-1',
+        description: 'A book about building good habits.',
         price: 500,
+        authorId: 1,
       },
       {
         title: 'Rich Dad Poor Dad',
-        author: 'Robert Kiyosaki',
+        isbn: 'ISBN-BOOK-2',
+        description: 'A book about money and financial education.',
         price: 650,
+        authorId: 1,
       },
       {
         title: 'Deep Work',
-        author: 'Cal Newport',
+        isbn: 'ISBN-BOOK-3',
+        description: 'A book about focused and productive work.',
         price: 700,
+        authorId: 1,
       },
     ];
 
